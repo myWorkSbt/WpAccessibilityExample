@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/post_graph.xml"
+    app:startDestination="@id/postListFragment">
+
+    <fragment
+        android:id="@+id/postListFragment"
+        android:name="com.example.wpaccessibilityexample.Fragment.PostListFragment"
+        android:label="PostListFragment"
+        tools:layout="@layout/fragment_post_list">
+
+        <action android:id="@+id/moveFromPostListFragmentToPostFragment"
+            app:destination="@id/postFragment"
+            />
+
+
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/postFragment"
+        android:name="com.example.wpaccessibilityexample.Fragment.PostFragment"
+        android:label="PostFragment"
+        tools:layout="@layout/fragment_post"
+        />
+
+</navigation>
