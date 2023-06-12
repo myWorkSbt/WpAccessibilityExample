@@ -9,18 +9,23 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.RecyclerView
-import com.example.wpaccessibilityexample.R
+import com.example.wpaccessibilityexample.Activity.HomeActivity
+import com.example.wpaccessibilityexample.Adapter.postAdapter
 import com.example.wpaccessibilityexample.Networking.RetrofitClient.Companion.getInst
+import com.example.wpaccessibilityexample.R
+import com.example.wpaccessibilityexample.Utils.DatabaseHelper
+import com.example.wpaccessibilityexample.Utils.Post
 import com.example.wpaccessibilityexample.data.Model
 import com.example.wpaccessibilityexample.data.ModelItem
-import com.example.wpaccessibilityexample.Adapter.postAdapter
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class PostListFragment : Fragment() {
 
+    private lateinit var databaseHelper: DatabaseHelper
     private var postAdapter: postAdapter? = null
+    private var  isDataProcessing = false
     private var postsList: Model? = null
 
     override fun onCreateView(
@@ -39,25 +44,22 @@ class PostListFragment : Fragment() {
 
 
     private fun init(view: View) {
+
         postAdapter = postAdapter(
             ArrayList<ModelItem>(),
             object : postAdapter.OnClickListener {
-                override fun onClick(position: Int) {
-
-                    val modelItem = postsList!![position]
-                    if (modelItem != null) {
+                override fun onClick(post_id: Int) {
                         val postBundle = Bundle()
-                        postBundle.putString("title", modelItem.title)
-                        postBundle.putString("desc", modelItem.body)
+                        postBundle.putInt("id", post_id)
+//                        databaseHelper.close()
                         NavHostFragment.findNavController(this@PostListFragment)
                             .navigate(
-                                R.id.moveFromPostListFragmentToPostFragment, postBundle,
+                                R.id.moveFromPostListFragmentToPostFragment,  postBundle,
                                 NavOptions.Builder()
                                     .setEnterAnim(android.R.animator.fade_in)
                                     .setExitAnim(android.R.animator.fade_out)
                                     .build()
                             )
-                    }
                 }
             })
 
@@ -68,23 +70,67 @@ class PostListFragment : Fragment() {
 
 
     private fun getApiDatas() {
-        getInst().posts()!!.enqueue(object : Callback<Model?> {
-            override fun onResponse(call: Call<Model?>, response: Response<Model?>) {
-                if (response.isSuccessful && response.body() != null && response.body()!!.size > 0) {
-                    postsList = response.body()
-                    postsList?.let { postAdapter!!.refreshLists(it) }
-                } else {
+        if (!isDataProcessing) {
+//            databaseHelper= DatabaseHelper.getDatabase(this@PostListFragment.context)
+            isDataProcessing = true
+            getInst().posts()!!.enqueue(object : Callback<Model?> {
+                override fun onResponse(call: Call<Model?>, response: Response<Model?>) {
+                    if (response.isSuccessful && response.body() != null && response.body()!!.size > 0) {
+                        SaveToRoom(postsList)
+                    } else {
+                        isDataProcessing = false
+                    }
+                }
+
+                override fun onFailure(call: Call<Model?>, t: Throwable) {
+                    isDataProcessing  = false
+                    Toast.makeText(
+                        this@PostListFragment.context,
+                        "" + t.localizedMessage,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+        }
+        else{
+            Toast.makeText(requireActivity(), " Data Processing! Please wait. ", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun SaveToRoom(postsList: Model?) {
+            for (modelItem  in postsList!!) {
+                try {
+                    if (!HomeActivity.databaseHelper.postDao().isAlreadySaved(modelItem.id, modelItem.userId)) {
+                        val postItem: Post =
+                            Post(modelItem.body, modelItem.id, modelItem.title, modelItem.userId)
+                        HomeActivity.databaseHelper.postDao().savePost(postItem)
+                    }
+                    }
+                catch (ex :Exception) {
+                    ex.printStackTrace()
+                    isDataProcessing = false
                 }
             }
+            getAllPosts()
+    }
 
-            override fun onFailure(call: Call<Model?>, t: Throwable) {
-                Toast.makeText(
-                    this@PostListFragment.context,
-                    "" + t.localizedMessage,
-                    Toast.LENGTH_SHORT
-                ).show()
+
+    private fun getAllPosts() {
+        val modelLists = Model()
+        try {
+
+            val postList = HomeActivity.databaseHelper.postDao().allPosts
+            for (postItem in postList) {
+                val modelItem =
+                    ModelItem(postItem.body, postItem.id, postItem.title, postItem.userId)
+                modelLists.add(modelItem)
             }
-        })
+            postAdapter?.refreshLists(modelLists)
+        }
+        catch (exx : Exception) {
+            exx.printStackTrace()
+        }
+        isDataProcessing = false
     }
 
 

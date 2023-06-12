@@ -11,9 +11,17 @@ import android.view.Window
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import com.example.wpaccessibilityexample.R
+import com.example.wpaccessibilityexample.Utils.DatabaseHelper
 import com.example.wpaccessibilityexample.Utils.WpAccessibility
 
 class HomeActivity : AppCompatActivity() {
+    companion object {
+        const val TABLE_NAME: String="post"
+        const val Id: String= "id"
+        const val USERID : String = "userId"
+        lateinit var databaseHelper : DatabaseHelper
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -23,9 +31,8 @@ class HomeActivity : AppCompatActivity() {
         )
 
         setContentView(R.layout.activity_home)
-
-
         setSkyBlueStatusBar()
+        databaseHelper = DatabaseHelper.getDatabase(this@HomeActivity)
 
 
         if (!isEnabled()) {

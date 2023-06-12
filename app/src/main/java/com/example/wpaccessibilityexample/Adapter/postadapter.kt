@@ -29,7 +29,7 @@ class postAdapter(private var mList: List<ModelItem>, val onClick: OnClickListen
         holder.card.setOnClickListener ( object : View.OnClickListener {
             override fun onClick(v: View?) {
                 if (onClick != null)
-                    onClick?.equals(holder.adapterPosition)
+                    onClick?.equals(item.id)
             }
         })
 
